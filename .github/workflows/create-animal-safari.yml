@@ -2,6 +2,10 @@ name: Create Animal Sounds Safari Video
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "video/**"
+      - ".github/workflows/create-animal-safari.yml"
 
 permissions:
   contents: read
@@ -9,21 +13,30 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Install tools
+      - name: Install rendering tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg espeak-ng
-          python -m pip install --upgrade pip pillow numpy
-      - name: Render vertical educational video
+          python -m pip install --upgrade pip pillow numpy pydub
+      - name: Download CC0 animal sound effects
+        run: |
+          mkdir -p assets/sounds
+          curl -fL --retry 3 https://sfxmint.com/dl/cow-moo-02.mp3 -o assets/sounds/cow.mp3
+          curl -fL --retry 3 https://sfxmint.com/dl/animal-duck-01.mp3 -o assets/sounds/duck.mp3 || curl -fL --retry 3 https://sfxmint.com/dl/animal-duck-02.mp3 -o assets/sounds/duck.mp3
+          curl -fL --retry 3 https://sfxmint.com/dl/animal-dog-bark-25.mp3 -o assets/sounds/dog.mp3
+          curl -fL --retry 3 https://sfxmint.com/dl/lion-roar-02.mp3 -o assets/sounds/lion.mp3
+      - name: Render the animated short
         run: python video/create_animal_safari.py
-      - name: Upload MP4
+      - name: Upload MP4 and source attribution
         uses: actions/upload-artifact@v4
         with:
           name: little-bright-lab-animal-sounds-safari
-          path: output/animal-sounds-safari.mp4
+          path: |
+            output/animal-sounds-safari.mp4
+            assets/SOUND_SOURCES.md
           if-no-files-found: error
           retention-days: 14
