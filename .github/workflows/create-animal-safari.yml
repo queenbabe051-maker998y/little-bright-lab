@@ -1,4 +1,4 @@
-name: Create Animal Sounds Safari Video
+name: Create Little Bright Lab Learning Show
 
 on:
   workflow_dispatch:
@@ -36,7 +36,7 @@ jobs:
         with:
           name: little-bright-lab-animal-sounds-safari
           path: |
-            output/animal-sounds-safari.mp4
+            output/little-bright-lab-learning-show.mp4
             assets/SOUND_SOURCES.md
           if-no-files-found: error
           retention-days: 14
