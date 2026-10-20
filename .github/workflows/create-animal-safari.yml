@@ -1,0 +1,29 @@
+name: Create Animal Sounds Safari Video
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg espeak-ng
+          python -m pip install --upgrade pip pillow numpy
+      - name: Render vertical educational video
+        run: python video/create_animal_safari.py
+      - name: Upload MP4
+        uses: actions/upload-artifact@v4
+        with:
+          name: little-bright-lab-animal-sounds-safari
+          path: output/animal-sounds-safari.mp4
+          if-no-files-found: error
+          retention-days: 14
