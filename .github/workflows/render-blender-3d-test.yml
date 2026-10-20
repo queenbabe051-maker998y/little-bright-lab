@@ -1,0 +1,37 @@
+name: Render Little Bright Lab 3D Motion Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Blender and FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender ffmpeg
+      - name: Render original 3D scene
+        env:
+          LITTLE_BRIGHT_LAB_OUTPUT: output
+        run: blender --background --threads 2 --python video/blender/create_motion_test.py
+      - name: Encode 8-second MP4
+        run: |
+          ffmpeg -y -hide_banner -loglevel error -framerate 18 -i output/blender_frames/frame_%04d.png \
+            -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -movflags +faststart \
+            output/little-bright-lab-3d-motion-test.mp4
+      - name: Upload preview artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: little-bright-lab-github-blender-3d-test
+          path: |
+            output/little-bright-lab-character-sheet.png
+            output/little-bright-lab-3d-motion-test.mp4
+          if-no-files-found: error
+          retention-days: 14
