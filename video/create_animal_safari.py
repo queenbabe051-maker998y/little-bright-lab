@@ -205,9 +205,9 @@ def add_voice(start,text):
 # add voice via reassignment because pydub overlay returns a new segment
 def voice_at(start,text):
     global voice
-    p=f"/tmp/lbl-voice-{start}.wav"
-    subprocess.run(["espeak-ng","-v","en-us+f3","-s","158","-p","72","-a","170","-w",p,text],check=True)
-    clip=AudioSegment.from_wav(p).set_frame_rate(sr).set_channels(2)+2
+    p=f"/tmp/lbl-voice-{start}.mp3"
+    subprocess.run(["edge-tts","--voice","en-US-AnaNeural","--rate","+8%","--pitch","+4Hz","--text",text,"--write-media",p],check=True)
+    clip=AudioSegment.from_file(p).set_frame_rate(sr).set_channels(2)+2
     voice=voice.overlay(clip,position=int(start*1000))
 voice_at(.25,"Welcome to Animal Sound Safari! Listen, guess, and learn with Pip!")
 for i,a in enumerate(ANIMALS):
