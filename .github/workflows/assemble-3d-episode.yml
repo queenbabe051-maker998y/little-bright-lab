@@ -1,0 +1,32 @@
+name: Assemble Little Bright Lab 3D Episode
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Check that scene clips are available
+        run: |
+          test -d video/episode/clips
+          find video/episode/clips -maxdepth 1 -name 'scene_[0-9][0-9][0-9].mp4' -print | sort
+      - name: Assemble final 3D episode
+        run: python3 video/assemble_episode.py
+      - name: Upload finished episode
+        uses: actions/upload-artifact@v4
+        with:
+          name: little-bright-lab-animal-sounds-safari
+          path: output/little-bright-lab-animal-sounds-safari.mp4
+          if-no-files-found: error
+          retention-days: 14
