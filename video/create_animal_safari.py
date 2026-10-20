@@ -31,9 +31,14 @@ def mascot(d,cx,cy,t,scale=1):
     d.polygon([(cx+48*s,cy+58*s),(cx+110*s,cy+88*s),(cx+88*s,cy+32*s)],fill="#19b8b3")
     d.ellipse((cx-58*s,cy+75*s,cx-8*s,cy+112*s),fill="#159d9f")
     d.ellipse((cx+8*s,cy+75*s,cx+58*s,cy+112*s),fill="#159d9f")
-    # wings
-    d.polygon([(cx-42*s,cy+20*s),(cx-92*s,cy-20*s),(cx-80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
-    d.polygon([(cx+42*s,cy+20*s),(cx+92*s,cy-20*s),(cx+80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
+    # Flapping wings and little waving arms give Pip a more performative TV-host feel.
+    flap=math.sin(t*9)*13*s
+    d.polygon([(cx-42*s,cy+20*s),(cx-92*s,cy-20*s-flap),(cx-80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
+    d.polygon([(cx+42*s,cy+20*s),(cx+92*s,cy-20*s+flap),(cx+80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
+    d.line((cx-48*s,cy+28*s,cx-92*s,cy+2*s+math.sin(t*6)*15*s),fill="#087e91",width=max(5,int(13*s)))
+    d.ellipse((cx-103*s,cy-7*s+math.sin(t*6)*15*s,cx-83*s,cy+13*s+math.sin(t*6)*15*s),fill="#21c9c2",outline="#087e91",width=max(2,int(3*s)))
+    d.line((cx+48*s,cy+28*s,cx+92*s,cy+2*s-math.sin(t*6)*15*s),fill="#087e91",width=max(5,int(13*s)))
+    d.ellipse((cx+83*s,cy-7*s-math.sin(t*6)*15*s,cx+103*s,cy+13*s-math.sin(t*6)*15*s),fill="#21c9c2",outline="#087e91",width=max(2,int(3*s)))
     # head/body
     d.ellipse((cx-65*s,cy-42*s,cx+65*s,cy+91*s),fill="#21c9c2",outline="#087e91",width=max(2,int(4*s)))
     d.ellipse((cx-75*s,cy-104*s,cx+75*s,cy+30*s),fill="#36d8ca",outline="#087e91",width=max(2,int(4*s)))
@@ -49,7 +54,12 @@ def mascot(d,cx,cy,t,scale=1):
     d.ellipse((cx+17*s,cy-60*s,cx+30*s,cy-39*s),fill="#27365f")
     d.ellipse((cx-26*s,cy-57*s,cx-21*s,cy-51*s),fill="#fff")
     d.ellipse((cx+21*s,cy-57*s,cx+26*s,cy-51*s),fill="#fff")
-    d.arc((cx-24*s,cy-36*s,cx+24*s,cy+1*s),5,170,fill="#14586c",width=max(2,int(4*s)))
+    # Talking/singing mouth alternates between a smile and a happy open-mouth shape.
+    if int(t*5)%2==0:
+        d.ellipse((cx-17*s,cy-30*s,cx+17*s,cy-3*s),fill="#14586c")
+        d.ellipse((cx-9*s,cy-12*s,cx+9*s,cy-4*s),fill="#ff83b7")
+    else:
+        d.arc((cx-24*s,cy-36*s,cx+24*s,cy+1*s),5,170,fill="#14586c",width=max(2,int(4*s)))
     for dx,dy in [(-48,-83),(49,-81),(-44,7),(47,10)]:
         star(d,cx+dx*s,cy+dy*s,5*s,"#fff3a8")
 
@@ -127,6 +137,12 @@ def frame(t):
         x=(i*137+int(t*42))%W; y=(i*89+int(math.sin(t+i)*14))%780
         if i%3==0: star(d,x,y,8+(i%3)*2,colors[i%4])
         else: d.ellipse((x,y,x+7,y+7),fill=colors[i%4])
+    # Puffy clouds drift across the sky to keep the world alive between learning beats.
+    for cloud_i in range(3):
+        cloud_x=((cloud_i*285+int(t*24))%(W+180))-80
+        cloud_y=150+cloud_i*95
+        for ox,oy,rr in [(-25,8,23),(0,-7,29),(28,7,24),(8,17,25)]:
+            d.ellipse((cloud_x+ox-rr,cloud_y+oy-rr,cloud_x+ox+rr,cloud_y+oy+rr),fill="#e9fbff")
     d.ellipse((565,60,660,155),fill="#fff0a1")
     rounded(d,(35,35,685,115),"#ffffff")
     txt(d,(360,75),"THE LITTLE BRIGHT LAB",25,"#34416f",True)
@@ -146,7 +162,10 @@ def frame(t):
             mascot(d,250,620,t,1.0)
             rounded(d,(395,440,585,640),"#fff","#ff79ad",5,34)
             txt(d,(490,535),"?",108,"#ff70a6",True)
-            txt(d,(360,820),"WHAT ANIMAL IS IT?",29,"#fff",True,stroke=2,outline="#40518b")
+            # A lively bouncing question bubble makes this a game, not a static card.
+            bubble_y=820+math.sin(t*7)*8
+            rounded(d,(80,bubble_y-38,640,bubble_y+36),"#fff","#ff83b7",4,30)
+            txt(d,(360,bubble_y),"WHAT ANIMAL IS IT?",29,"#35416f",True)
             txt(d,(360,885),"Think... think... think!",25,"#35416f",True)
         else:
             for j in range(12):
