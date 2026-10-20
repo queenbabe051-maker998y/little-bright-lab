@@ -1,7 +1,14 @@
-name: Assemble Little Bright Lab 3D Episode
+name: Assemble Animal Sounds Safari Episode 01
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "video/episode/clips/**"
+      - "video/episode/audio/**"
+      - "video/episode/episode_01.json"
+      - "video/assemble_episode.py"
+      - ".github/workflows/assemble-3d-episode.yml"
 
 permissions:
   contents: read
@@ -9,24 +16,45 @@ permissions:
 jobs:
   assemble:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
-      - name: Check out repository
+      - name: Check out production assets
         uses: actions/checkout@v4
+
       - name: Install FFmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-      - name: Check that scene clips are available
+
+      - name: Validate episode manifest and scene files
         run: |
-          test -d video/episode/clips
-          find video/episode/clips -maxdepth 1 -name 'scene_[0-9][0-9][0-9].mp4' -print | sort
-      - name: Assemble final 3D episode
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("video/episode/episode_01.json").read_text())
+          assert manifest["runtime_seconds"] == 60, "Episode manifest must total 60 seconds"
+          scenes = manifest["scenes"]
+          assert len(scenes) == 5, "Expected exactly five scenes"
+          assert sum(s["duration"] for s in scenes) == 60, "Scene durations must total 60 seconds"
+          clips = Path("video/episode/clips")
+          missing = [s["file"] for s in scenes if not (clips / s["file"]).is_file()]
+          if missing:
+              print("Missing generated scene clips:")
+              for name in missing:
+                  print(f" - {name}")
+              print("\nAdd the five approved 3D MP4 clips to video/episode/clips/.")
+              print("GitHub Actions assembles supplied footage; it does not generate AI animation.")
+              raise SystemExit(1)
+          print("Manifest validated: five scenes, 60 seconds.")
+          PY
+
+      - name: Assemble final 60-second master
         run: python3 video/assemble_episode.py
+
       - name: Upload finished episode
         uses: actions/upload-artifact@v4
         with:
-          name: little-bright-lab-animal-sounds-safari
-          path: output/little-bright-lab-animal-sounds-safari.mp4
+          name: little-bright-lab-animal-sounds-safari-episode-01
+          path: output/little-bright-lab-animal-sounds-safari-episode-01.mp4
           if-no-files-found: error
           retention-days: 14
