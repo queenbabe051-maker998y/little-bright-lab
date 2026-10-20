@@ -2,13 +2,6 @@ name: Assemble Animal Sounds Safari Episode 01
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "video/episode/clips/**"
-      - "video/episode/audio/**"
-      - "video/episode/episode_01.json"
-      - "video/assemble_episode.py"
-      - ".github/workflows/assemble-3d-episode.yml"
 
 permissions:
   contents: read
@@ -42,7 +35,7 @@ jobs:
               print("Missing generated scene clips:")
               for name in missing:
                   print(f" - {name}")
-              print("\nAdd the five approved 3D MP4 clips to video/episode/clips/.")
+              print("\nAdd all five approved 3D MP4 clips to video/episode/clips/.")
               print("GitHub Actions assembles supplied footage; it does not generate AI animation.")
               raise SystemExit(1)
           print("Manifest validated: five scenes, 60 seconds.")
