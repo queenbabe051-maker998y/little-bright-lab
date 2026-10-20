@@ -14,6 +14,8 @@ FONT="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 def font(n): return ImageFont.truetype(FONT,n)
 def text(d,xy,s,n,fill="#ffffff",stroke=3):
     d.text(xy,s,font=font(n),fill=fill,anchor="mm",stroke_width=stroke,stroke_fill="#26345e")
+def rounded(d,box,fill,outline=None,r=28,w=3):
+    d.rounded_rectangle(box,radius=r,fill=fill,outline=outline,width=w)
 def animal(d,kind,x,y,t,scale=1):
     bob=math.sin(t*4+x*.01)*8
     x=int(x); y=int(y+bob); s=scale
