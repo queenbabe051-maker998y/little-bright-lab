@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir -p assets/sounds
           curl -fL --retry 3 https://sfxmint.com/dl/cow-moo-02.mp3 -o assets/sounds/cow.mp3
-          curl -fL --retry 3 https://sfxmint.com/dl/animal-duck-01.mp3 -o assets/sounds/duck.mp3 || curl -fL --retry 3 https://sfxmint.com/dl/animal-duck-02.mp3 -o assets/sounds/duck.mp3
+          curl -fL --retry 3 https://sfxmint.com/dl/duck-quack-02.mp3 -o assets/sounds/duck.mp3
           curl -fL --retry 3 https://sfxmint.com/dl/animal-dog-bark-25.mp3 -o assets/sounds/dog.mp3
           curl -fL --retry 3 https://sfxmint.com/dl/lion-roar-02.mp3 -o assets/sounds/lion.mp3
       - name: Render the animated short
