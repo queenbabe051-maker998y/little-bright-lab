@@ -111,7 +111,8 @@ def camera(name, loc, target, ortho):
     c.rotation_euler=(Vector(target)-c.location).to_track_quat("-Z","Y").to_euler()
     return c
 scene=bpy.context.scene
-scene.render.engine="CYCLES" if False else "BLENDER_EEVEE_NEXT"
+available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
+scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in available_engines else "BLENDER_EEVEE" if "BLENDER_EEVEE" in available_engines else "CYCLES"
 scene.render.resolution_x=1280; scene.render.resolution_y=720; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 bpy.ops.object.light_add(type="AREA", location=(-4,-6,8)); key=bpy.context.object; key.data.energy=1250; key.data.shape="DISK"; key.data.size=7
