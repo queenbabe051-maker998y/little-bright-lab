@@ -1,0 +1,86 @@
+{
+  "title": "Animal Sounds Safari: Who Says Moo?",
+  "brand": "The Little Bright Lab",
+  "episode": 1,
+  "audience": "4-10",
+  "runtime_seconds": 60,
+  "format": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 24,
+    "video_codec": "libx264",
+    "audio_codec": "aac"
+  },
+  "scenes": [
+    {
+      "id": 1,
+      "file": "scene_001.mp4",
+      "start": 0,
+      "duration": 10,
+      "title": "Welcome to the Lab World",
+      "characters": [
+        "Pip",
+        "Mimi"
+      ]
+    },
+    {
+      "id": 2,
+      "file": "scene_002.mp4",
+      "start": 10,
+      "duration": 12,
+      "title": "The Mystery Sound",
+      "characters": [
+        "Pip",
+        "Mimi"
+      ]
+    },
+    {
+      "id": 3,
+      "file": "scene_003.mp4",
+      "start": 22,
+      "duration": 13,
+      "title": "Two Silly Wrong Answers",
+      "characters": [
+        "Rumble",
+        "Dott",
+        "Pip",
+        "Mimi"
+      ]
+    },
+    {
+      "id": 4,
+      "file": "scene_004.mp4",
+      "start": 35,
+      "duration": 15,
+      "title": "Moomo Reveals the Answer",
+      "characters": [
+        "Moomo",
+        "Pip",
+        "Mimi",
+        "Rumble",
+        "Dott"
+      ]
+    },
+    {
+      "id": 5,
+      "file": "scene_005.mp4",
+      "start": 50,
+      "duration": 10,
+      "title": "Safari Celebration",
+      "characters": [
+        "Pip",
+        "Mimi",
+        "Moomo",
+        "Dott",
+        "Rumble"
+      ]
+    }
+  ],
+  "audio_stems": [
+    "audio/narration.wav",
+    "audio/music.wav",
+    "audio/sfx.wav"
+  ],
+  "subtitles": "audio/subtitles.srt",
+  "notes": "Place approved generated/animated scene MP4s at video/episode/clips/scene_001.mp4 through scene_005.mp4. This manifest and GitHub workflow assemble supplied assets; they do not generate AI footage."
+}
