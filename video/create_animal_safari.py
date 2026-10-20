@@ -195,7 +195,7 @@ def frame(t):
         steps=["1. Use a pea-sized fluoride toothpaste","2. Brush gently in small circles","3. Brush every side for two minutes","4. Spit it out; don't swallow"]
         for i,line in enumerate(steps):
             rounded(d,(55,760+i*78,665,820+i*78),"#fff")
-            txt(d,(360,790+i*78,line,21,"#34416f",True)
+            txt(d,(360,790+i*78),line,21,"#34416f",True)
         mascot(d,360,1130,t,.42)
     else:
         txt(d,(360,200),"YOU DID IT!",56,"#fff",True,stroke=4,outline="#40518b")
