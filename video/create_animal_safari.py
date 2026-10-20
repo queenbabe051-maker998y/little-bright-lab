@@ -1,272 +1,157 @@
 #!/usr/bin/env python3
-"""Create a lively, original 9:16 Animal Sounds Safari short."""
+"""Render a 60-second Little Bright Lab animated-series sampler (no Pip/dragon)."""
 from PIL import Image, ImageDraw, ImageFont
 from pydub import AudioSegment
-import math, os, random, subprocess
+import math, os, random, subprocess, wave
+import numpy as np
 
-W,H,FPS,DURATION=720,1280,12,90
-FRAMES="/tmp/lbl-frames"; OUT="output/little-bright-lab-learning-show.mp4"
+W,H,FPS,DURATION=720,1280,12,60
+OUT="output/little-bright-lab-cartoon-world.mp4"
+FRAMES="/tmp/lbl-world-frames"
 os.makedirs(FRAMES,exist_ok=True); os.makedirs("output",exist_ok=True)
-random.seed(14)
-
-def font(n,b=False):
-    p="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if b else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    return ImageFont.truetype(p,n)
-def txt(d,xy,s,n,fill="#fff",b=True,anchor="mm",stroke=0,outline="#24305e"):
-    d.text(xy,s,font=font(n,b),fill=fill,anchor=anchor,stroke_width=stroke,stroke_fill=outline)
-def rounded(d,box,fill,outline=None,r=28,w=3):
-    d.rounded_rectangle(box,radius=r,fill=fill,outline=outline,width=w)
-def star(d,x,y,r,c):
-    pts=[]
-    for i in range(10):
-        a=-math.pi/2+i*math.pi/5; rr=r if i%2==0 else r*.42
-        pts.append((x+math.cos(a)*rr,y+math.sin(a)*rr))
-    d.polygon(pts,fill=c)
-def mascot(d,cx,cy,t,scale=1):
-    # Original recurring mascot: Pip, a turquoise baby dragon with a golden crest and star freckles.
-    bob=math.sin(t*5)*9
-    cy+=bob
-    s=scale
-    # tail and feet
-    d.polygon([(cx+48*s,cy+58*s),(cx+110*s,cy+88*s),(cx+88*s,cy+32*s)],fill="#19b8b3")
-    d.ellipse((cx-58*s,cy+75*s,cx-8*s,cy+112*s),fill="#159d9f")
-    d.ellipse((cx+8*s,cy+75*s,cx+58*s,cy+112*s),fill="#159d9f")
-    # Flapping wings and little waving arms give Pip a more performative TV-host feel.
-    flap=math.sin(t*9)*13*s
-    d.polygon([(cx-42*s,cy+20*s),(cx-92*s,cy-20*s-flap),(cx-80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
-    d.polygon([(cx+42*s,cy+20*s),(cx+92*s,cy-20*s+flap),(cx+80*s,cy+52*s)],fill="#77e5d1",outline="#087e91")
-    d.line((cx-48*s,cy+28*s,cx-92*s,cy+2*s+math.sin(t*6)*15*s),fill="#087e91",width=max(5,int(13*s)))
-    d.ellipse((cx-103*s,cy-7*s+math.sin(t*6)*15*s,cx-83*s,cy+13*s+math.sin(t*6)*15*s),fill="#21c9c2",outline="#087e91",width=max(2,int(3*s)))
-    d.line((cx+48*s,cy+28*s,cx+92*s,cy+2*s-math.sin(t*6)*15*s),fill="#087e91",width=max(5,int(13*s)))
-    d.ellipse((cx+83*s,cy-7*s-math.sin(t*6)*15*s,cx+103*s,cy+13*s-math.sin(t*6)*15*s),fill="#21c9c2",outline="#087e91",width=max(2,int(3*s)))
-    # head/body
-    d.ellipse((cx-65*s,cy-42*s,cx+65*s,cy+91*s),fill="#21c9c2",outline="#087e91",width=max(2,int(4*s)))
-    d.ellipse((cx-75*s,cy-104*s,cx+75*s,cy+30*s),fill="#36d8ca",outline="#087e91",width=max(2,int(4*s)))
-    # crest
-    d.polygon([(cx-32*s,cy-94*s),(cx-50*s,cy-133*s),(cx-5*s,cy-107*s),
-               (cx+15*s,cy-145*s),(cx+29*s,cy-99*s),(cx+53*s,cy-119*s),(cx+47*s,cy-80*s)],fill="#ffcb45")
-    # cheeks, eyes, smile
-    d.ellipse((cx-57*s,cy-34*s,cx-30*s,cy-10*s),fill="#ff9ab7")
-    d.ellipse((cx+30*s,cy-34*s,cx+57*s,cy-10*s),fill="#ff9ab7")
-    d.ellipse((cx-40*s,cy-69*s,cx-13*s,cy-35*s),fill="#fff")
-    d.ellipse((cx+13*s,cy-69*s,cx+40*s,cy-35*s),fill="#fff")
-    d.ellipse((cx-30*s,cy-60*s,cx-17*s,cy-39*s),fill="#27365f")
-    d.ellipse((cx+17*s,cy-60*s,cx+30*s,cy-39*s),fill="#27365f")
-    d.ellipse((cx-26*s,cy-57*s,cx-21*s,cy-51*s),fill="#fff")
-    d.ellipse((cx+21*s,cy-57*s,cx+26*s,cy-51*s),fill="#fff")
-    # Talking/singing mouth alternates between a smile and a happy open-mouth shape.
-    if int(t*5)%2==0:
-        d.ellipse((cx-17*s,cy-30*s,cx+17*s,cy-3*s),fill="#14586c")
-        d.ellipse((cx-9*s,cy-12*s,cx+9*s,cy-4*s),fill="#ff83b7")
-    else:
-        d.arc((cx-24*s,cy-36*s,cx+24*s,cy+1*s),5,170,fill="#14586c",width=max(2,int(4*s)))
-    for dx,dy in [(-48,-83),(49,-81),(-44,7),(47,10)]:
-        star(d,cx+dx*s,cy+dy*s,5*s,"#fff3a8")
-
-def draw_animal(d,kind,cx,cy,t,s=1):
-    cy+=math.sin(t*5)*8
-    # ground shadow
-    d.ellipse((cx-130*s,cy+140*s,cx+130*s,cy+170*s),fill="#a1dca6")
-    if kind=="cow":
-        d.ellipse((cx-95*s,cy-4*s,cx+95*s,cy+145*s),fill="#fffaf1",outline="#45516f",width=4)
-        d.ellipse((cx-78*s,cy+22*s,cx-28*s,cy+82*s),fill="#34415e")
-        d.ellipse((cx+36*s,cy+6*s,cx+76*s,cy+60*s),fill="#34415e")
-        d.polygon([(cx-50*s,cy-66*s),(cx-90*s,cy-115*s),(cx-18*s,cy-91*s)],fill="#f7c6d2")
-        d.polygon([(cx+50*s,cy-66*s),(cx+90*s,cy-115*s),(cx+18*s,cy-91*s)],fill="#f7c6d2")
-        d.ellipse((cx-72*s,cy-112*s,cx+72*s,cy+34*s),fill="#fffaf1",outline="#45516f",width=4)
-        d.ellipse((cx-43*s,cy-67*s,cx-20*s,cy-36*s),fill="#25304e")
-        d.ellipse((cx+20*s,cy-67*s,cx+43*s,cy-36*s),fill="#25304e")
-        d.ellipse((cx-43*s,cy-15*s,cx+43*s,cy+25*s),fill="#f5a9bd")
-        d.ellipse((cx-23*s,cy-3*s,cx-12*s,cy+10*s),fill="#9b5c75"); d.ellipse((cx+12*s,cy-3*s,cx+23*s,cy+10*s),fill="#9b5c75")
-        d.ellipse((cx-16*s,cy-124*s,cx+16*s,cy-93*s),fill="#f3bd45")
-    elif kind=="duck":
-        d.ellipse((cx-85*s,cy-5*s,cx+80*s,cy+145*s),fill="#ffcf42",outline="#dc9a24",width=4)
-        d.ellipse((cx-60*s,cy-110*s,cx+58*s,cy+30*s),fill="#ffe36a",outline="#dc9a24",width=4)
-        d.polygon([(cx+36*s,cy-45*s),(cx+112*s,cy-22*s),(cx+40*s,cy-5*s)],fill="#ff813c")
-        d.ellipse((cx-31*s,cy-70*s,cx-10*s,cy-43*s),fill="#27324c")
-        d.ellipse((cx-26*s,cy-66*s,cx-20*s,cy-60*s),fill="#fff")
-        d.ellipse((cx-56*s,cy+30*s,cx+28*s,cy+85*s),fill="#fff0a3")
-        d.ellipse((cx-53*s,cy+136*s,cx-3*s,cy+151*s),fill="#ff9138")
-        d.ellipse((cx+9*s,cy+136*s,cx+58*s,cy+151*s),fill="#ff9138")
-    elif kind=="dog":
-        d.ellipse((cx-85*s,cy-3*s,cx+85*s,cy+145*s),fill="#d99a5e",outline="#925a3e",width=4)
-        d.ellipse((cx-72*s,cy-105*s,cx+72*s,cy+37*s),fill="#edbd87",outline="#925a3e",width=4)
-        d.ellipse((cx-104*s,cy-89*s,cx-48*s,cy+15*s),fill="#9e6247")
-        d.ellipse((cx+48*s,cy-89*s,cx+104*s,cy+15*s),fill="#9e6247")
-        d.ellipse((cx-42*s,cy-68*s,cx-20*s,cy-39*s),fill="#25304e")
-        d.ellipse((cx+20*s,cy-68*s,cx+42*s,cy-39*s),fill="#25304e")
-        d.ellipse((cx-33*s,cy-19*s,cx+33*s,cy+28*s),fill="#fff1de")
-        d.ellipse((cx-12*s,cy-12*s,cx+12*s,cy+7*s),fill="#25304e")
-        d.arc((cx-20*s,cy-2*s,cx+20*s,cy+32*s),0,180,fill="#a34458",width=4)
-        d.ellipse((cx-15*s,cy+14*s,cx+15*s,cy+43*s),fill="#f36b91")
-    else: # friendly lion
-        d.ellipse((cx-112*s,cy-130*s,cx+112*s,cy+95*s),fill="#f28a37",outline="#bd5a2d",width=4)
-        for a in range(12):
-            ang=a*math.pi/6
-            x=cx+105*s*math.cos(ang); y=cy-20*s+105*s*math.sin(ang)
-            d.ellipse((x-22*s,y-22*s,x+22*s,y+22*s),fill="#ffb34f")
-        d.ellipse((cx-72*s,cy-96*s,cx+72*s,cy+47*s),fill="#ffd078",outline="#bd5a2d",width=4)
-        d.ellipse((cx-42*s,cy-61*s,cx-20*s,cy-33*s),fill="#25304e")
-        d.ellipse((cx+20*s,cy-61*s,cx+42*s,cy-33*s),fill="#25304e")
-        d.ellipse((cx-14*s,cy-20*s,cx+14*s,cy+2*s),fill="#57392f")
-        d.arc((cx-29*s,cy-12*s,cx+29*s,cy+34*s),0,180,fill="#57392f",width=4)
-
-# A longer original preschool learning-show episode.
-ANIMALS=[
- {"kind":"cow","title":"C IS FOR COW!","sound":"MOO! MOO!","voice":"Listen carefully! What animal says moo?","reveal":"COW! C is for cow. The cow says moo!","sound_start":9.0},
- {"kind":"duck","title":"D IS FOR DUCK!","sound":"QUACK! QUACK!","voice":"Can you hear the quack quack?","reveal":"DUCK! D is for duck. The duck says quack!","sound_start":17.0},
- {"kind":"dog","title":"D IS FOR DOG!","sound":"WOOF! WOOF!","voice":"Who says woof? Make your best puppy sound!","reveal":"DOG! D is for dog. The dog says woof!","sound_start":25.0},
- {"kind":"lion","title":"L IS FOR LION!","sound":"ROAR! ROAR!","voice":"A big jungle sound! Who could it be?","reveal":"LION! L is for lion. The lion says roar!","sound_start":33.0},
-]
-def scene_for(t):
-    if t<5: return -1
-    if t<37: return min(3,int((t-5)//8))
-    if t<54: return 4
-    if t<69: return 5
-    if t<88: return 6
-    return 7
-
+random.seed(23)
+FONT="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+def font(n): return ImageFont.truetype(FONT,n)
+def text(d,xy,s,n,fill="#ffffff",stroke=3):
+    d.text(xy,s,font=font(n),fill=fill,anchor="mm",stroke_width=stroke,stroke_fill="#26345e")
+def animal(d,kind,x,y,t,scale=1):
+    bob=math.sin(t*4+x*.01)*8
+    x=int(x); y=int(y+bob); s=scale
+    # Soft ground shadow
+    d.ellipse((x-90*s,y+95*s,x+90*s,y+120*s),fill="#d3e9c9")
+    if kind=="Mimi":
+        fur="#ffb4c9"; ear="#ff8eae"
+        d.ellipse((x-65*s,y-95*s,x-20*s,y+10*s),fill=fur,outline="#8f5277",width=3)
+        d.ellipse((x+20*s,y-95*s,x+65*s,y+10*s),fill=fur,outline="#8f5277",width=3)
+        d.ellipse((x-54*s,y-85*s,x-29*s,y-5*s),fill=ear); d.ellipse((x+29*s,y-85*s,x+54*s,y-5*s),fill=ear)
+        d.ellipse((x-68*s,y-35*s,x+68*s,y+100*s),fill=fur,outline="#8f5277",width=3)
+        d.ellipse((x-43*s,y+0*s,x-18*s,y+29*s),fill="white"); d.ellipse((x+18*s,y,x+43*s,y+29*s),fill="white")
+        d.ellipse((x-34*s,y+8*s,x-22*s,y+25*s),fill="#26345e"); d.ellipse((x+22*s,y+8*s,x+34*s,y+25*s),fill="#26345e")
+        d.ellipse((x-9*s,y+34*s,x+9*s,y+48*s),fill="#d56c91")
+        d.arc((x-20*s,y+35*s,x+20*s,y+65*s),0,180,fill="#8f5277",width=3)
+    elif kind=="Moomo":
+        d.ellipse((x-72*s,y-30*s,x+72*s,y+100*s),fill="#fff8e8",outline="#776f62",width=3)
+        d.ellipse((x-62*s,y-90*s,x+62*s,y+35*s),fill="#fff8e8",outline="#776f62",width=3)
+        d.ellipse((x-58*s,y-95*s,x-25*s,y-60*s),fill="#ffb5c2"); d.ellipse((x+25*s,y-95*s,x+58*s,y-60*s),fill="#ffb5c2")
+        d.ellipse((x-46*s,y-65*s,x-20*s,y-32*s),fill="white"); d.ellipse((x+20*s,y-65*s,x+46*s,y-32*s),fill="white")
+        d.ellipse((x-37*s,y-58*s,x-25*s,y-36*s),fill="#26345e"); d.ellipse((x+25*s,y-58*s,x+37*s,y-36*s),fill="#26345e")
+        d.ellipse((x-18*s,y-20*s,x+18*s,y+5*s),fill="#ef9eae")
+        d.ellipse((x-50*s,y+15*s,x-20*s,y+48*s),fill="#987b68"); d.ellipse((x+20*s,y+35*s,x+52*s,y+65*s),fill="#987b68")
+    elif kind=="Dott":
+        d.ellipse((x-70*s,y-65*s,x+70*s,y+90*s),fill="#a88be8",outline="#594b91",width=3)
+        d.ellipse((x-68*s,y-95*s,x-8*s,y-25*s),fill="#c9b8ff",outline="#594b91",width=3)
+        d.ellipse((x+8*s,y-95*s,x+68*s,y-25*s),fill="#c9b8ff",outline="#594b91",width=3)
+        d.ellipse((x-47*s,y-35*s,x-5*s,y+10*s),fill="white"); d.ellipse((x+5*s,y-35*s,x+47*s,y+10*s),fill="white")
+        d.ellipse((x-32*s,y-22*s,x-16*s,y+1*s),fill="#26345e"); d.ellipse((x+16*s,y-22*s,x+32*s,y+1*s),fill="#26345e")
+        d.polygon([(x-12*s,y+8*s),(x+12*s,y+8*s),(x,y+28*s)],fill="#ffbd4a")
+        d.arc((x-18*s,y+25*s,x+18*s,y+48*s),0,180,fill="#594b91",width=3)
+        d.ellipse((x-65*s,y+0*s,x-25*s,y+52*s),fill="#a88be8"); d.ellipse((x+25*s,y+0*s,x+65*s,y+52*s),fill="#a88be8")
+    else: # Rumble, friendly lion cub
+        d.ellipse((x-80*s,y-85*s,x+80*s,y+80*s),fill="#f5a43b",outline="#a95b2a",width=3)
+        d.ellipse((x-60*s,y-55*s,x+60*s,y+100*s),fill="#ffd37a",outline="#a95b2a",width=3)
+        d.ellipse((x-45*s,y-28*s,x-12*s,y+8*s),fill="white"); d.ellipse((x+12*s,y-28*s,x+45*s,y+8*s),fill="white")
+        d.ellipse((x-34*s,y-18*s,x-18*s,y+5*s),fill="#26345e"); d.ellipse((x+18*s,y-18*s,x+34*s,y+5*s),fill="#26345e")
+        d.polygon([(x-12*s,y+16*s),(x+12*s,y+16*s),(x,y+30*s)],fill="#8e4d45")
+        d.arc((x-24*s,y+25*s,x+24*s,y+55*s),0,180,fill="#8e4d45",width=3)
+    # Blinking stars / movement accents
+    for dx,dy in [(-90,-100),(92,-70)]:
+        if math.sin(t*5+dx)>0:
+            d.text((x+dx*s,y+dy*s),"✦",font=font(max(18,int(28*s))),fill="#fff16c",anchor="mm")
+def scene(t):
+    if t<12: return 0
+    if t<24: return 1
+    if t<36: return 2
+    if t<48: return 3
+    return 4
 def frame(t):
-    sc=scene_for(t)
-    bgs=["#71dff5","#8be6c1","#ffd76b","#b7a6ff","#ff9fc3","#7bdcf4","#ffd76b","#a9edc4"]
-    im=Image.new("RGB",(W,H),bgs[max(0,sc)]); d=ImageDraw.Draw(im)
-    d.ellipse((-160,820,500,1450),fill="#77d99c")
-    d.ellipse((220,850,900,1450),fill="#48c98e")
-    colors=["#fff3a8","#ff83b7","#ffffff","#917bff"]
-    for i in range(26):
-        x=(i*137+int(t*42))%W; y=(i*89+int(math.sin(t+i)*14))%780
-        if i%3==0: star(d,x,y,8+(i%3)*2,colors[i%4])
-        else: d.ellipse((x,y,x+7,y+7),fill=colors[i%4])
-    # Puffy clouds drift across the sky to keep the world alive between learning beats.
-    for cloud_i in range(3):
-        cloud_x=((cloud_i*285+int(t*24))%(W+180))-80
-        cloud_y=150+cloud_i*95
-        for ox,oy,rr in [(-25,8,23),(0,-7,29),(28,7,24),(8,17,25)]:
-            d.ellipse((cloud_x+ox-rr,cloud_y+oy-rr,cloud_x+ox+rr,cloud_y+oy+rr),fill="#e9fbff")
-    d.ellipse((565,60,660,155),fill="#fff0a1")
-    rounded(d,(35,35,685,115),"#ffffff")
-    txt(d,(360,75),"THE LITTLE BRIGHT LAB",25,"#34416f",True)
-    if sc==-1:
-        txt(d,(360,205),"LEARN & PLAY!",57,"#fff",True,stroke=4,outline="#40518b")
-        txt(d,(360,275),"ANIMAL SOUNDS • ABCs • COUNTING",22,"#34416f",True)
-        mascot(d,360,640,t,1.55)
-        rounded(d,(70,900,650,1010),"#fff")
-        txt(d,(360,955),"Let's learn together!",34,"#f15f87",True)
-        txt(d,(360,1080),"Sing, count, and smile!",28,"#fff",True,stroke=2,outline="#40518b")
-    elif sc in range(4):
-        a=ANIMALS[sc]; local=(t-5)%8
-        txt(d,(360,190),a["title"],39,"#fff",True,stroke=3,outline="#35416f")
-        rounded(d,(90,235,630,305),"#fff")
-        txt(d,(360,270),"LISTEN AND GUESS!",28,"#35416f",True)
-        if local<3.8:
-            mascot(d,250,620,t,1.0)
-            rounded(d,(395,440,585,640),"#fff","#ff79ad",5,34)
-            txt(d,(490,535),"?",108,"#ff70a6",True)
-            # A lively bouncing question bubble makes this a game, not a static card.
-            bubble_y=820+math.sin(t*7)*8
-            rounded(d,(80,bubble_y-38,640,bubble_y+36),"#fff","#ff83b7",4,30)
-            txt(d,(360,bubble_y),"WHAT ANIMAL IS IT?",29,"#35416f",True)
-            txt(d,(360,885),"Think... think... think!",25,"#35416f",True)
-        else:
-            for j in range(12):
-                ang=j*math.pi/6; star(d,360+190*math.cos(ang),550+190*math.sin(ang),13,"#fff3a8")
-            draw_animal(d,a["kind"],360,590,t,1.13)
-            rounded(d,(80,810,640,925),"#fff","#ff83b7",4,32)
-            txt(d,(360,850),a["sound"],52,"#f15f87",True)
-            txt(d,(360,895),a["reveal"],22,"#34416f",True)
-            mascot(d,360,1080,t,.48)
-    elif sc==4:
-        txt(d,(360,190),"ABC ADVENTURE!",47,"#fff",True,stroke=3,outline="#40518b")
-        txt(d,(360,255),"Sing the letters with Pip!",27,"#34416f",True)
-        letters=list("ABCDEF")
-        for i,L in enumerate(letters):
-            x=65+i*118; y=430+math.sin(t*4+i)*25
-            rounded(d,(x,y,x+105,y+140),["#ff83b7","#ffe36a","#77dfc5","#b7a6ff","#ffad6b","#71dff5"][i],None,22)
-            txt(d,(x+52,y+70),L,67,"#fff",True,stroke=2,outline="#35416f")
-        mascot(d,360,760,t,.85)
-        rounded(d,(65,930,655,1035),"#fff")
-        txt(d,(360,980),"A, B, C, D, E, F!",35,"#f15f87",True)
-        txt(d,(360,1090),"A is for apple! B is for ball!",23,"#34416f",True)
-    elif sc==5:
-        txt(d,(360,190),"LET'S COUNT!",54,"#fff",True,stroke=3,outline="#40518b")
-        txt(d,(360,260),"Count the bouncing stars!",27,"#34416f",True)
-        n=min(5,max(1,int((t-54)//2.7)+1))
-        for i in range(n):
-            x=115+i*123; y=500+math.sin(t*5+i)*24
-            star(d,x,y,48,["#ff83b7","#fff3a8","#ffffff","#b7a6ff","#ffad6b"][i])
-            txt(d,(x,y+85),str(i+1),36,"#34416f",True)
-        mascot(d,360,820,t,.85)
-        rounded(d,(90,965,630,1065),"#fff")
-        txt(d,(360,1015),"1, 2, 3, 4, 5!",42,"#f15f87",True)
-    elif sc==6:
-        txt(d,(360,185),"BRUSH, BRUSH, BRUSH!",39,"#fff",True,stroke=3,outline="#40518b")
-        txt(d,(360,245),"Keep your smile sparkly!",26,"#34416f",True)
-        # friendly tooth and oversized toothbrush illustration
-        d.ellipse((220,370,500,700),fill="#fff",outline="#7f8bc0",width=5)
-        for x in [270,340,410]:
-            d.ellipse((x-30,580,x+30,720),fill="#fff",outline="#7f8bc0",width=3)
-        d.ellipse((280,470,310,510),fill="#34416f"); d.ellipse((405,470,435,510),fill="#34416f")
-        d.arc((300,505,420,590),0,180,fill="#f15f87",width=7)
-        # toothbrush handle and bristles
-        d.rounded_rectangle((470,520,530,850),radius=25,fill="#ff83b7",outline="#b74d85",width=4)
-        d.rounded_rectangle((455,430,545,555),radius=18,fill="#71dff5",outline="#3b8eae",width=4)
-        for x in range(465,540,18): d.line((x,440,x,480),fill="#fff",width=5)
-        steps=["1. Use a pea-sized fluoride toothpaste","2. Brush gently in small circles","3. Brush every side for two minutes","4. Spit it out; don't swallow"]
-        for i,line in enumerate(steps):
-            rounded(d,(55,760+i*78,665,820+i*78),"#fff")
-            txt(d,(360,790+i*78),line,21,"#34416f",True)
-        mascot(d,360,1130,t,.42)
+    idx=scene(t)
+    palettes=[("#9be7ff","#c8f4ff"),("#b8f2c8","#e9ffd9"),("#ffd9a1","#fff0cc"),("#b9c7ff","#e5eaff"),("#ffc6dc","#ffe9f0")]
+    top,bottom=palettes[idx]
+    im=Image.new("RGB",(W,H),top); d=ImageDraw.Draw(im)
+    for yy in range(H):
+        if yy%4==0:
+            r=int((1-yy/H)*int(top[1:3],16)+(yy/H)*int(bottom[1:3],16))
+            g=int((1-yy/H)*int(top[3:5],16)+(yy/H)*int(bottom[3:5],16))
+            b=int((1-yy/H)*int(top[5:7],16)+(yy/H)*int(bottom[5:7],16))
+            d.line((0,yy,W,yy),fill=(r,g,b))
+    # drifting clouds and a playful rolling landscape
+    for j in range(4):
+        cx=int((j*230+t*18)%900)-90; cy=140+j%2*90
+        d.ellipse((cx,cy,cx+110,cy+55),fill="#ffffff")
+        d.ellipse((cx+25,cy-25,cx+80,cy+45),fill="#ffffff")
+    d.ellipse((-150,850,430,1370),fill="#83dba2")
+    d.ellipse((280,820,950,1390),fill="#69cc91")
+    if idx==0:
+        title="WELCOME TO"; subtitle="THE LITTLE BRIGHT LAB"
+        who="Mimi"
+    elif idx==1:
+        title="ANIMAL SOUNDS SAFARI"; subtitle="Listen, guess, then say it!"
+        who="Moomo"
+    elif idx==2:
+        title="LITTLE NUMBER ADVENTURES"; subtitle="Can you count 1, 2, 3?"
+        who="Mimi"
+    elif idx==3:
+        title="ALPHABET & WORD EXPLORERS"; subtitle="A is for Animal!"
+        who="Dott"
     else:
-        txt(d,(360,200),"YOU DID IT!",56,"#fff",True,stroke=4,outline="#40518b")
-        txt(d,(360,270),"LEARNING SUPERSTAR!",35,"#fff",True,stroke=3,outline="#f15f98")
-        mascot(d,360,650,t,1.05)
-        rounded(d,(55,930,665,1040),"#fff")
-        txt(d,(360,985),"Animals • ABCs • Counting • Healthy teeth",22,"#34416f",True)
-        txt(d,(360,1100),"See you next time, little explorers!",24,"#fff",True,stroke=2,outline="#40518b")
+        title="BRIGHT SMILES + GROWING UP GREAT"; subtitle="Healthy habits. Kind hearts."
+        who="Rumble"
+    # Intro/outro show the whole ensemble; middle scenes spotlight the episode friend.
+    if idx in (0,4):
+        animal(d,"Mimi",150,700,t,.75); animal(d,"Moomo",310,710,t,.75)
+        animal(d,"Dott",470,700,t,.75); animal(d,"Rumble",610,710,t,.68)
+    else:
+        animal(d,who,360,710,t,1.35)
+    # Scene-specific floating learning props
+    if idx==1:
+        animal(d,"Moomo",360,735,t,1.2)
+        text(d,(360,930),"MOO!  QUACK!  WOOF!",38,"#ffffff")
+    elif idx==2:
+        for i in range(3):
+            xx=250+i*110; yy=490+math.sin(t*4+i)*12
+            d.ellipse((xx-35,yy-35,xx+35,yy+35),fill="#ffdf55",outline="#e9a52c",width=3)
+            text(d,(xx,yy),str(i+1),36,"#26345e",1)
+    elif idx==3:
+        rounded(d,(240,470,480,610),"#ffffff","#8773c8",24,5); text(d,(360,540),"A a",82,"#7457bd",1)
+    elif idx==4:
+        text(d,(360,500),"BRUSH • SHARE • CARE",30,"#ffffff")
+    rounded(d,(28,55,692,205),"#5b66ad", "#ffffff", 32,4)
+    text(d,(360,100),title,27)
+    text(d,(360,158),subtitle,23,"#fff16c",2)
+    text(d,(360,1150),"LEARN • PLAY • SHINE!",26,"#ffffff")
     return im
 
-# Render frames; low enough FPS for a practical GitHub-hosted render.
-for i in range(DURATION*FPS):
-    frame(i/FPS).save(f"{FRAMES}/f{i:04d}.jpg",quality=90)
-
-sr=22050
-import numpy as np, wave
-samples=np.zeros(int(sr*DURATION),dtype=np.float32)
-notes=[523.25,659.25,783.99,659.25,587.33,698.46,880.0,698.46]
-for i in range(int(DURATION/.28)):
-    start=int(i*.28*sr); f=notes[i%len(notes)]; length=min(int(.22*sr),len(samples)-start)
-    tt=np.arange(length)/sr
-    samples[start:start+length]+=(.11*np.sin(2*np.pi*f*tt)*np.exp(-tt*7)).astype(np.float32)
-    samples[start:start+length]+=(.02*np.sin(2*np.pi*(f/2)*tt)*np.exp(-tt*5)).astype(np.float32)
-samples=np.clip(samples,-.7,.7); st=np.column_stack([samples,samples])
-with wave.open("/tmp/lbl-music.wav","wb") as wf:
-    wf.setnchannels(2); wf.setsampwidth(2); wf.setframerate(sr); wf.writeframes((st*32767).astype(np.int16).tobytes())
-music=AudioSegment.from_wav("/tmp/lbl-music.wav")-21
-voice=AudioSegment.silent(duration=DURATION*1000,frame_rate=sr).set_channels(2)
-def voice_at(start,text):
-    global voice
-    p=f"/tmp/lbl-voice-{int(start*10)}.mp3"
-    subprocess.run(["edge-tts","--voice","en-US-AnaNeural","--rate","+8%","--pitch","+4Hz","--text",text,"--write-media",p],check=True)
-    clip=AudioSegment.from_file(p).set_frame_rate(sr).set_channels(2)+2
+# Build a frame-by-frame animated MP4.
+for i in range(FPS*DURATION):
+    frame(i/FPS).save(f"{FRAMES}/{i:05d}.png")
+subprocess.run(["ffmpeg","-y","-loglevel","error","-framerate",str(FPS),"-i",f"{FRAMES}/%05d.png","-c:v","libx264","-pix_fmt","yuv420p","-r",str(FPS),"/tmp/lbl-world-video.mp4"],check=True)
+# Generate a light original instrumental bed.
+sr=22050; total=int(sr*DURATION); audio=np.zeros(total,dtype=np.float32)
+notes=[523.25,659.25,783.99,659.25,587.33,698.46,880,698.46]
+for j,start in enumerate(np.arange(0,DURATION,.32)):
+    a=int(start*sr); n=min(int(.27*sr),total-a); tt=np.arange(n)/sr
+    f=notes[j%len(notes)]
+    audio[a:a+n]+=0.07*np.sin(2*np.pi*f*tt)*np.sin(np.pi*np.arange(n)/n)
+audio=np.clip(audio,-.95,.95)
+with wave.open("/tmp/lbl-world-music.wav","wb") as wf:
+    wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr)
+    wf.writeframes((audio*32767).astype(np.int16).tobytes())
+# Clear narration, one speaker at a time, with no overlapping voices.
+lines=[
+ (1.0,"Welcome to The Little Bright Lab, where learning is an adventure!"),
+ (13.0,"Meet our animal friends. Listen carefully. What sound does a cow make? Moo!"),
+ (25.0,"Let's count together. One, two, three! Great counting!"),
+ (37.0,"A is for animal. A, A, animal! Let's explore new words together."),
+ (49.0,"Remember to brush your teeth, be kind, and help your friends. You are bright!"),
+]
+voice=AudioSegment.silent(duration=DURATION*1000)
+for i,(start,line) in enumerate(lines):
+    mp3=f"/tmp/lbl-voice-{i}.mp3"
+    subprocess.run(["edge-tts","--voice","en-US-AriaNeural","--rate","+4%","--text",line,"--write-media",mp3],check=True)
+    clip=AudioSegment.from_file(mp3).apply_gain(-2)
     voice=voice.overlay(clip,position=int(start*1000))
-voice_at(.3,"Welcome to The Little Bright Lab! I'm Pip! Today we'll discover animal sounds, explore our ABCs, count to five, and learn to brush our teeth. Let's go!")
-for i,a in enumerate(ANIMALS):
-    start=5+i*8
-    voice_at(start+.2,a["voice"])
-    voice_at(start+4.0,a["reveal"])
-voice_at(37.3,"A, B, C, D, E, F! A is for apple, B is for ball, C is for cow! Let's sing the letters together!")
-voice_at(45.0,"A, B, C, D, E, F! Great singing!")
-voice_at(54.2,"Let's count together! One, two, three, four, five! Count the stars with me!")
-voice_at(61.5,"One, two, three, four, five! Hooray!")
-voice_at(69.2,"Time to brush our teeth! Use a pea-sized amount of fluoride toothpaste. Brush gently in little circles on the outside, inside, and chewing surfaces. Brush for two minutes, twice every day, with help from a grown-up. Spit out the toothpaste. Don't swallow it!")
-voice_at(83.0,"Fantastic brushing! You're a learning superstar! See you next time, little explorers!")
+music=AudioSegment.from_wav("/tmp/lbl-world-music.wav").apply_gain(-18)
 mix=music.overlay(voice)
-for kind,start in [("cow",9.0),("duck",17.0),("dog",25.0),("lion",33.0)]:
-    p=f"assets/sounds/{kind}.mp3"
-    if os.path.exists(p):
-        clip=AudioSegment.from_file(p).set_frame_rate(sr).set_channels(2)[:2400].fade_in(80).fade_out(180)-4
-        mix=mix.overlay(clip,position=int(start*1000))
-mix=mix.fade_in(350).fade_out(800)
-mix.export("/tmp/lbl-final-audio.wav",format="wav")
-subprocess.run(["ffmpeg","-y","-hide_banner","-loglevel","error","-framerate",str(FPS),"-i",f"{FRAMES}/f%04d.jpg","-i","/tmp/lbl-final-audio.wav","-t",str(DURATION),"-vf","scale=720:1280,format=yuv420p","-c:v","libx264","-preset","veryfast","-crf","22","-c:a","aac","-b:a","160k","-movflags","+faststart",OUT],check=True)
-print("Created",OUT)
+mix.export("/tmp/lbl-world-mix.mp3",format="mp3",bitrate="128k")
+subprocess.run(["ffmpeg","-y","-loglevel","error","-i","/tmp/lbl-world-video.mp4","-i","/tmp/lbl-world-mix.mp3","-c:v","copy","-c:a","aac","-shortest",OUT],check=True)
+print(f"Created {OUT}")
