@@ -20,8 +20,8 @@ jobs:
       - name: Install rendering tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg espeak-ng
-          python -m pip install --upgrade pip pillow numpy pydub
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip pillow numpy pydub edge-tts
       - name: Download CC0 animal sound effects
         run: |
           mkdir -p assets/sounds
