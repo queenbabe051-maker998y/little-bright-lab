@@ -1,11 +1,7 @@
-name: Build The Little Bright Lab Cartoon World
+name: LEGACY Prototype Sampler (Not the Final 3D Episode)
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "video/**"
-      - ".github/workflows/create-animal-safari.yml"
 
 permissions:
   contents: read
@@ -15,6 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Explain prototype limitations
+        run: |
+          echo "This workflow renders the older procedural sampler only."
+          echo "It is not the polished 3D Animal Sounds Safari episode."
+          echo "For the approved production package, run Prepare Animal Sounds Safari Production Pack."
+          echo "For final assembly, run Assemble Animal Sounds Safari Episode 01 after supplying all five approved scene clips."
       - name: Check out repository
         uses: actions/checkout@v4
       - name: Install rendering tools
@@ -22,12 +24,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip pillow numpy pydub edge-tts
-      - name: Render The Little Bright Lab cartoon sampler
+      - name: Render legacy procedural prototype
         run: python video/create_animal_safari.py
-      - name: Upload animated MP4
+      - name: Upload prototype MP4
         uses: actions/upload-artifact@v4
         with:
-          name: little-bright-lab-cartoon-world
+          name: legacy-procedural-prototype-not-final
           path: output/little-bright-lab-cartoon-world.mp4
           if-no-files-found: error
           retention-days: 14
