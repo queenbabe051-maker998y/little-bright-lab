@@ -157,7 +157,7 @@ for group, xnew in [(pip,-4.2),(mimi,-2.2),(moomo,2.1),(dott,-0.4),(rumble,0.7)]
     if xs:
         delta=xnew-xs[0]
         for o in group: o.location.x += delta
-for o in pip+dott+rumble: o.hide_render=True
+for o in pip+dott+rumble: o.hide_render=False
 for o in bushes: o.hide_render=False
 # Moomo starts partly hidden behind the bushes then steps left into view.
 for o in moomo:
@@ -183,10 +183,10 @@ for o in mimi:
 # Animate camera gentle push-in.
 storycam=camera("Safari story camera",(0,-12,4.2),(0,0,1.45),9.3)
 scene.camera=storycam
-for frame, scale in [(1,9.3),(48,8.5)]:
+for frame, scale in [(1,10.8),(96,9.0)]:
     storycam.data.ortho_scale=scale; storycam.data.keyframe_insert(data_path="ortho_scale",frame=frame)
-scene.frame_start=1; scene.frame_end=48; scene.render.fps=12
-scene.render.resolution_x=640; scene.render.resolution_y=360
+scene.frame_start=1; scene.frame_end=96; scene.render.fps=12
+scene.render.resolution_x=960; scene.render.resolution_y=540
 scene.render.image_settings.file_format="PNG"
 scene.render.filepath=os.path.join(FRAMES,"frame_")
 scene.render.resolution_percentage=100
