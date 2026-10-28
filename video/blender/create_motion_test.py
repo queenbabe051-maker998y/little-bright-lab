@@ -21,11 +21,10 @@ def mat(name, color, roughness=0.68):
 
 PINK=mat("Mimi • petal pink",(1.0,0.30,0.57)); CREAM=mat("Moomo • warm cream",(0.96,0.90,0.77))
 BROWN=mat("Moomo • cocoa patches",(0.20,0.10,0.065)); LAV=mat("Dott • duckling yellow",(1.0,0.78,0.10))
-GOLD=mat("Rumble • honey gold",(1.0,0.53,0.12)); MANE=mat("Rumble • soft mane",(0.82,0.27,0.045)
+GOLD=mat("Rumble • honey gold",(1.0,0.53,0.12)); MANE=mat("Rumble • soft mane",(0.82,0.27,0.045))
 ORANGE_FUR=mat("Pip • orange fur",(1.0,0.34,0.07)); WHITE_FUR=mat("Pip • cream fur",(1.0,0.93,0.80))
 BLUE=mat("Pip • blue collar",(0.08,0.42,0.95)); PURPLE=mat("Mimi • purple collar",(0.48,0.20,0.85))
-PINK_MUZZLE=mat("Mimi • soft muzzle",(1.0,0.66,0.75)); PUPIL=BLACK if "BLACK" in globals() else mat("Pupils",(0.035,0.025,0.045))
-WHITE=mat("Eye whites",(1,0.98,0.9)); BLACK=mat("Pupils",(0.035,0.025,0.045))
+PINK_MUZZLE=mat("Mimi • soft muzzle",(1.0,0.66,0.75)); WHITE=mat("Eye whites",(1,0.98,0.9)); BLACK=mat("Pupils",(0.035,0.025,0.045))
 GREEN=mat("Grass",(0.20,0.53,0.26)); LEAF=mat("Leaves",(0.12,0.39,0.20)); SKY=mat("Sky",(0.38,0.72,0.94))
 YELLOW=mat("Flower centers",(1.0,0.72,0.12)); ORANGE=mat("Beak",(1.0,0.42,0.06))
 
