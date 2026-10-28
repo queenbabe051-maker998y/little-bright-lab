@@ -1,9 +1,8 @@
 import bpy, math, os
 from mathutils import Vector
 
-# Genuine Blender 3D proof-of-concept for The Little Bright Lab.
-# This is intentionally a first blockout; later iterations should replace
-# primitive-built models with approved sculpted/rigger characters.
+# Little Bright Lab character and motion test.
+# Stylized original toy-like characters; this is still a procedural Blender prototype, not AI-generated cinematic animation.
 ROOT = os.environ.get("LITTLE_BRIGHT_LAB_OUTPUT", os.path.abspath("output"))
 FRAMES = os.path.join(ROOT, "blender_frames")
 os.makedirs(FRAMES, exist_ok=True)
@@ -20,9 +19,12 @@ def mat(name, color, roughness=0.68):
     bs.inputs["Roughness"].default_value=roughness
     return m
 
-PINK=mat("Mimi • petal pink",(0.95,0.34,0.56)); CREAM=mat("Moomo • warm cream",(0.94,0.86,0.68))
-BROWN=mat("Moomo • cocoa patches",(0.28,0.12,0.07)); LAV=mat("Dott • lavender",(0.56,0.42,0.84))
-GOLD=mat("Rumble • honey gold",(1.0,0.48,0.08)); MANE=mat("Rumble • soft mane",(0.72,0.23,0.035))
+PINK=mat("Mimi • petal pink",(1.0,0.30,0.57)); CREAM=mat("Moomo • warm cream",(0.96,0.90,0.77))
+BROWN=mat("Moomo • cocoa patches",(0.20,0.10,0.065)); LAV=mat("Dott • duckling yellow",(1.0,0.78,0.10))
+GOLD=mat("Rumble • honey gold",(1.0,0.53,0.12)); MANE=mat("Rumble • soft mane",(0.82,0.27,0.045)
+ORANGE_FUR=mat("Pip • orange fur",(1.0,0.34,0.07)); WHITE_FUR=mat("Pip • cream fur",(1.0,0.93,0.80))
+BLUE=mat("Pip • blue collar",(0.08,0.42,0.95)); PURPLE=mat("Mimi • purple collar",(0.48,0.20,0.85))
+PINK_MUZZLE=mat("Mimi • soft muzzle",(1.0,0.66,0.75)); PUPIL=BLACK if "BLACK" in globals() else mat("Pupils",(0.035,0.025,0.045))
 WHITE=mat("Eye whites",(1,0.98,0.9)); BLACK=mat("Pupils",(0.035,0.025,0.045))
 GREEN=mat("Grass",(0.20,0.53,0.26)); LEAF=mat("Leaves",(0.12,0.39,0.20)); SKY=mat("Sky",(0.38,0.72,0.94))
 YELLOW=mat("Flower centers",(1.0,0.72,0.12)); ORANGE=mat("Beak",(1.0,0.42,0.06))
@@ -40,22 +42,33 @@ def character(name, x, kind, bodymat):
     parts=[]
     body=uv(name+" body",(x,0,1.1),(0.57,0.43,0.65),bodymat); parts.append(body)
     head=uv(name+" head",(x,0,2.0),(0.64,0.48,0.56),bodymat); parts.append(head)
-    if kind=="bunny":
-        for dx,ang in [(-0.25,-0.16),(0.25,0.16)]:
-            ear=uv(name+" ear",(x+dx,-0.01,2.72),(0.17,0.15,0.48),bodymat); ear.rotation_euler[1]=ang; parts.append(ear)
-            inner=uv(name+" inner ear",(x+dx,-0.145,2.73),(0.075,0.025,0.32),mat(name+" ear blush",(0.98,0.56,0.68))); inner.rotation_euler[1]=ang; parts.append(inner)
-        tail=uv(name+" tail",(x+0.55,0.18,0.75),(0.19,0.18,0.19),WHITE); parts.append(tail)
+    if kind=="kitten":
+        for dx,ang in [(-0.30,-0.20),(0.30,0.20)]:
+            ear=cone(name+" pointed cat ear",(x+dx,-0.02,2.48),0.23,0.55,bodymat); ear.rotation_euler[1]=ang; parts.append(ear)
+            inner=uv(name+" pink inner ear",(x+dx,-0.205,2.48),(0.09,0.025,0.20),PINK_MUZZLE); inner.rotation_euler[1]=ang; parts.append(inner)
+        muzzle=uv(name+" kitten muzzle",(x,-0.48,1.88),(0.24,0.10,0.13),PINK_MUZZLE); parts.append(muzzle)
+        for side in [-1,1]:
+            whisker=uv(name+" whisker",(x+side*0.34,-0.49,1.88),(0.18,0.012,0.012),WHITE); whisker.rotation_euler[1]=side*0.08; parts.append(whisker)
+        tail=uv(name+" curled tail",(x+0.55,0.20,0.92),(0.14,0.14,0.34),bodymat); tail.rotation_euler[1]=-0.55; parts.append(tail)
+    elif kind=="puppy":
+        for dx,ang in [(-0.43,-0.65),(0.43,0.65)]:
+            ear=uv(name+" floppy puppy ear",(x+dx,0.0,2.03),(0.22,0.20,0.42),ORANGE_FUR); ear.rotation_euler[1]=ang; parts.append(ear)
+        blaze=uv(name+" cream face blaze",(x,-0.475,2.08),(0.17,0.035,0.38),WHITE_FUR); parts.append(blaze)
+        muzzle=uv(name+" puppy muzzle",(x,-0.50,1.87),(0.28,0.13,0.18),WHITE_FUR); parts.append(muzzle)
+        tail=uv(name+" puppy tail",(x+0.56,0.18,0.88),(0.14,0.14,0.30),ORANGE_FUR); tail.rotation_euler[1]=-0.7; parts.append(tail)
     elif kind=="cow":
         for dx,dz in [(-0.31,0.16),(0.3,-0.06)]:
             patch=uv(name+" patch",(x+dx,-0.41,1.15+dz),(0.19,0.035,0.26),BROWN); parts.append(patch)
         muzzle=uv(name+" muzzle",(x,-0.46,1.83),(0.28,0.13,0.20),mat(name+" muzzle pink",(0.94,0.55,0.58))); parts.append(muzzle)
         for dx in [-0.32,0.32]:
             horn=cone(name+" horn",(x+dx,0,2.53),0.12,0.28,YELLOW); parts.append(horn)
-    elif kind=="owl":
-        for dx in [-0.35,0.35]:
-            tuft=cone(name+" feather tuft",(x+dx,0,2.48),0.19,0.35,LAV); parts.append(tuft)
-            wing=uv(name+" wing",(x+dx*1.35,-0.02,1.35),(0.25,0.22,0.40),LAV); parts.append(wing)
-        beak=cone(name+" beak",(x,-0.51,1.92),0.13,0.25,ORANGE,(math.pi/2,0,0)); parts.append(beak)
+    elif kind=="duck":
+        head.scale=(0.60,0.47,0.54)
+        for dx in [-0.42,0.42]:
+            wing=uv(name+" tiny duck wing",(x+dx,-0.04,1.30),(0.20,0.19,0.31),LAV); parts.append(wing)
+        beak=uv(name+" orange duck bill",(x,-0.53,1.91),(0.20,0.12,0.10),ORANGE); parts.append(beak)
+        for dx in [-0.20,0.20]:
+            foot=uv(name+" orange webbed foot",(x+dx,-0.08,0.40),(0.22,0.25,0.07),ORANGE); parts.append(foot)
     elif kind=="lion":
         mane=uv(name+" mane",(x,0.04,2.0),(0.78,0.61,0.72),MANE); parts.append(mane)
         face=uv(name+" face",(x,-0.48,2.02),(0.48,0.18,0.43),GOLD); parts.append(face)
@@ -69,7 +82,12 @@ def character(name, x, kind, bodymat):
         eye=uv(name+" eye",(x+dx,-0.44,2.12),(0.14,0.09,0.17),WHITE); parts.append(eye)
         pupil=uv(name+" pupil",(x+dx+0.015,-0.525,2.11),(0.065,0.035,0.09),BLACK); parts.append(pupil)
         glint=uv(name+" eye sparkle",(x+dx-0.018,-0.56,2.15),(0.024,0.015,0.03),WHITE); parts.append(glint)
-    smile=uv(name+" smile",(x,-0.535,1.88),(0.12,0.025,0.035),BROWN); parts.append(smile)
+    smile=uv(name+" smile",(x,-0.535,1.78),(0.12,0.025,0.035),BROWN); parts.append(smile)
+    # Bright signature collars and small medallions make the cast easier to recognize.
+    collar_mat = BLUE if name=="Pip" else PURPLE if name=="Mimi" else YELLOW if name=="Rumble" else ORANGE if name=="Dott" else BLUE
+    collar=uv(name+" signature collar",(x,-0.02,1.54),(0.48,0.40,0.095),collar_mat); parts.append(collar)
+    charm_mat = YELLOW if name in ("Pip","Moomo","Rumble") else PINK_MUZZLE if name=="Mimi" else ORANGE
+    charm=uv(name+" signature charm",(x,-0.425,1.49),(0.09,0.045,0.11),charm_mat); parts.append(charm)
     for dx in [-0.28,0.28]:
         leg=uv(name+" foot",(x+dx,-0.02,0.52),(0.18,0.25,0.15),bodymat); parts.append(leg)
     return parts, head
@@ -88,10 +106,11 @@ for x,z,s in [(-5,1.8,1.3),(-4,2.2,1.5),(4.4,2,1.4),(5.3,1.6,1.1)]:
     bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.17, depth=1.8, location=(x,1.8,z-1.15))
     bpy.context.object.data.materials.append(BROWN)
 
-# Four original cast members for a character lineup; Moomo will animate from behind leaves.
-mimi, mimi_head=character("Mimi", -2.2, "bunny", PINK)
+# Five original cast members with distinct silhouettes and signature colors.
+pip, pip_head=character("Pip", -4.2, "puppy", ORANGE_FUR)
+mimi, mimi_head=character("Mimi", -2.2, "kitten", PINK)
 moomo, moomo_head=character("Moomo", 2.1, "cow", CREAM)
-dott, dott_head=character("Dott", -0.4, "owl", LAV)
+dott, dott_head=character("Dott", -0.4, "duck", LAV)
 rumble, rumble_head=character("Rumble", 0.7, "lion", GOLD)
 
 # Bushes at right foreground conceal Moomo initially.
@@ -120,11 +139,10 @@ bpy.ops.object.light_add(type="AREA", location=(4,1,6)); fill=bpy.context.object
 sheetcam=camera("Character sheet camera",(0,-12,4.0),(0,0,1.55),10.2)
 scene.camera=sheetcam
 # For sheet show all four; reveal bushes are hidden in sheet and characters placed in row.
-for o in dott+rumble: o.hide_render=False
+for o in pip+mimi+moomo+dott+rumble: o.hide_render=False
 for o in bushes: o.hide_render=True
-for o in mimi+moomo+dott+rumble: o.hide_render=False
-# Reposition lineup to show each cast member separated.
-for group, xnew in [(mimi,-3.1),(moomo,-1.05),(dott,1.05),(rumble,3.1)]:
+# Reposition lineup to show all five cast members separated.
+for group, xnew in [(pip,-4.0),(mimi,-2.0),(moomo,0.0),(dott,2.0),(rumble,4.0)]:
     # group parts are object references; move their x positions relative to prior root.
     xs=[o.location.x for o in group]
     if xs:
@@ -135,12 +153,12 @@ scene.render.filepath=os.path.join(ROOT,"little-bright-lab-character-sheet.png")
 bpy.ops.render.render(write_still=True)
 
 # Return Mimi and Moomo to story positions; hide owl and lion, restore reveal bushes.
-for group, xnew in [(mimi,-2.2),(moomo,2.1)]:
+for group, xnew in [(pip,-4.2),(mimi,-2.2),(moomo,2.1),(dott,-0.4),(rumble,0.7)]:
     xs=[o.location.x for o in group]
     if xs:
         delta=xnew-xs[0]
         for o in group: o.location.x += delta
-for o in dott+rumble: o.hide_render=True
+for o in pip+dott+rumble: o.hide_render=True
 for o in bushes: o.hide_render=False
 # Moomo starts partly hidden behind the bushes then steps left into view.
 for o in moomo:
