@@ -190,11 +190,9 @@ scene.render.resolution_x=1280; scene.render.resolution_y=720
 scene.render.image_settings.file_format="PNG"
 scene.render.filepath=os.path.join(FRAMES,"frame_")
 scene.render.resolution_percentage=100
-# Slightly softened interpolation
-for obj in bpy.data.objects:
-    if obj.animation_data and obj.animation_data.action:
-        for fc in obj.animation_data.action.fcurves:
-            for kp in fc.keyframe_points: kp.interpolation="BEZIER"
+# Blender 5 uses layered Actions and no longer exposes action.fcurves here.
+# Blender's default keyframe interpolation is already Bezier, so keep the
+# default interpolation rather than accessing the removed legacy API.
 for frame in range(scene.frame_start, scene.frame_end+1):
     scene.frame_set(frame)
     scene.render.filepath=os.path.join(FRAMES, f"frame_{frame:04d}.png")
