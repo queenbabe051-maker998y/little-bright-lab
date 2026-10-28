@@ -131,7 +131,7 @@ def camera(name, loc, target, ortho):
 scene=bpy.context.scene
 available_engines = {item.identifier for item in scene.render.bl_rna.properties["engine"].enum_items}
 scene.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in available_engines else "BLENDER_EEVEE" if "BLENDER_EEVEE" in available_engines else "CYCLES"
-scene.render.resolution_x=1280; scene.render.resolution_y=720; scene.render.resolution_percentage=100
+scene.render.resolution_x=640; scene.render.resolution_y=360; scene.render.resolution_percentage=100
 scene.render.image_settings.file_format="PNG"
 bpy.ops.object.light_add(type="AREA", location=(-4,-6,8)); key=bpy.context.object; key.data.energy=1250; key.data.shape="DISK"; key.data.size=7
 bpy.ops.object.light_add(type="AREA", location=(4,1,6)); fill=bpy.context.object; fill.data.energy=900; fill.data.size=5
@@ -165,9 +165,9 @@ for o in moomo:
     o.location.x += 1.0
     o.keyframe_insert(data_path="location", frame=1)
     o.location.x = base.x + 1.0
-    o.keyframe_insert(data_path="location", frame=72)
+    o.keyframe_insert(data_path="location", frame=24)
     o.location.x = base.x
-    o.keyframe_insert(data_path="location", frame=144)
+    o.keyframe_insert(data_path="location", frame=48)
 # Mimi leans/listens with a gentle body bounce and head tilt.
 for o in mimi:
     base=o.location.copy()
@@ -183,10 +183,10 @@ for o in mimi:
 # Animate camera gentle push-in.
 storycam=camera("Safari story camera",(0,-12,4.2),(0,0,1.45),9.3)
 scene.camera=storycam
-for frame, scale in [(1,9.3),(144,8.5)]:
+for frame, scale in [(1,9.3),(48,8.5)]:
     storycam.data.ortho_scale=scale; storycam.data.keyframe_insert(data_path="ortho_scale",frame=frame)
-scene.frame_start=1; scene.frame_end=144; scene.render.fps=18
-scene.render.resolution_x=1280; scene.render.resolution_y=720
+scene.frame_start=1; scene.frame_end=48; scene.render.fps=12
+scene.render.resolution_x=640; scene.render.resolution_y=360
 scene.render.image_settings.file_format="PNG"
 scene.render.filepath=os.path.join(FRAMES,"frame_")
 scene.render.resolution_percentage=100
